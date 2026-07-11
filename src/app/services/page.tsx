@@ -31,9 +31,11 @@ export default function ServicesPage() {
 
       <main className="mx-auto max-w-6xl px-6 py-20">
         <p className="text-sm font-medium text-neutral-500">Services</p>
+
         <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight md:text-6xl">
           Digitale oplossingen die verder gaan dan alleen design.
         </h1>
+
         <p className="mt-6 max-w-2xl text-lg leading-8 text-neutral-600">
           AkkerDigital bouwt websites, systemen en automatiseringen met een sterke technische basis.
         </p>
