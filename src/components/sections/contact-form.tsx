@@ -1,15 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import type { ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   contactFormSchema,
   type ContactFormValues,
 } from "@/lib/validations/contact";
+import { submitContactForm } from "@/server/actions/contact";
 
 export function ContactForm() {
-  const [submitted, setSubmitted] = useState(false);
+  const [formMessage, setFormMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   const {
     register,
@@ -25,11 +30,23 @@ export function ContactForm() {
   });
 
   async function onSubmit(data: ContactFormValues) {
-    console.log("Contact form submission:", data);
+    setFormMessage(null);
 
-    await new Promise((resolve) => setTimeout(resolve, 600));
+    const result = await submitContactForm(data);
 
-    setSubmitted(true);
+    if (!result.success) {
+      setFormMessage({
+        type: "error",
+        text: result.message,
+      });
+      return;
+    }
+
+    setFormMessage({
+      type: "success",
+      text: result.message,
+    });
+
     reset({
       name: "",
       email: "",
@@ -43,9 +60,15 @@ export function ContactForm() {
 
   return (
     <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm md:p-8">
-      {submitted && (
-        <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
-          Je aanvraag is gevalideerd. In de volgende fase slaan we deze op in de database.
+      {formMessage && (
+        <div
+          className={`mb-6 rounded-2xl border p-4 text-sm ${
+            formMessage.type === "success"
+              ? "border-green-200 bg-green-50 text-green-800"
+              : "border-red-200 bg-red-50 text-red-800"
+          }`}
+        >
+          {formMessage.text}
         </div>
       )}
 
@@ -129,7 +152,7 @@ export function ContactForm() {
           disabled={isSubmitting}
           className="rounded-full bg-neutral-950 px-6 py-3 text-sm font-medium text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isSubmitting ? "Versturen..." : "Aanvraag testen"}
+          {isSubmitting ? "Versturen..." : "Aanvraag versturen"}
         </button>
       </form>
     </div>
@@ -143,11 +166,13 @@ function Field({
 }: {
   label: string;
   error?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-medium text-neutral-700">{label}</span>
+      <span className="mb-2 block text-sm font-medium text-neutral-700">
+        {label}
+      </span>
       {children}
       {error && <span className="mt-2 block text-sm text-red-600">{error}</span>}
     </label>
