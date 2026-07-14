@@ -78,3 +78,62 @@ export async function getLeadById(id: string): Promise<Lead | null> {
 
   return data;
 }
+
+export type LeadMetrics = {
+  total: number;
+  new: number;
+  proposalSent: number;
+  won: number;
+};
+
+export async function getLeadMetrics(): Promise<LeadMetrics> {
+  const [
+    totalResult,
+    newResult,
+    proposalSentResult,
+    wonResult,
+  ] = await Promise.all([
+    supabaseAdmin
+      .from("leads")
+      .select("*", { count: "exact", head: true }),
+
+    supabaseAdmin
+      .from("leads")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "new"),
+
+    supabaseAdmin
+      .from("leads")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "proposal_sent"),
+
+    supabaseAdmin
+      .from("leads")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "won"),
+  ]);
+
+  const firstError =
+    totalResult.error ||
+    newResult.error ||
+    proposalSentResult.error ||
+    wonResult.error;
+
+  if (firstError) {
+    console.error("Failed to fetch lead metrics:", {
+      code: firstError.code,
+      message: firstError.message,
+      details: firstError.details,
+      hint: firstError.hint,
+    });
+
+    throw new Error("De leadstatistieken konden niet worden opgehaald.");
+  }
+
+  return {
+    total: totalResult.count ?? 0,
+    new: newResult.count ?? 0,
+    proposalSent: proposalSentResult.count ?? 0,
+    won: wonResult.count ?? 0,
+  };
+}

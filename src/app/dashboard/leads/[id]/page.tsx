@@ -1,12 +1,10 @@
-import { LeadStatusForm } from "@/components/dashboard/lead-status-form";
-import {
-  getLeadStatusLabel,
-  type LeadStatus,
-} from "@/constants/lead-status";
-
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { LeadStatusBadge } from "@/components/dashboard/lead-status-badge";
+import { LeadStatusForm } from "@/components/dashboard/lead-status-form";
+import type { LeadStatus } from "@/constants/lead-status";
 import { getLeadById } from "@/server/queries/leads";
 
 type LeadDetailPageProps = {
@@ -46,6 +44,14 @@ function formatBudget(value: string) {
   return labels[value] ?? value;
 }
 
+function formatSource(value: string) {
+  const labels: Record<string, string> = {
+    contact_form: "Contactformulier",
+  };
+
+  return labels[value] ?? value;
+}
+
 export default async function LeadDetailPage({
   params,
 }: LeadDetailPageProps) {
@@ -60,7 +66,7 @@ export default async function LeadDetailPage({
     <div>
       <Link
         href="/dashboard/leads"
-        className="text-sm text-neutral-500 hover:text-neutral-950"
+        className="text-sm text-neutral-500 transition hover:text-neutral-950"
       >
         ← Terug naar leads
       </Link>
@@ -80,20 +86,25 @@ export default async function LeadDetailPage({
           </p>
         </div>
 
-        <span className="w-fit rounded-full bg-neutral-200 px-4 py-2 text-sm font-medium">
-          {getLeadStatusLabel(lead.status)}
-        </span>
+        <LeadStatusBadge status={lead.status} />
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_0.7fr]">
         <section className="rounded-2xl border border-neutral-200 bg-white p-6">
           <h2 className="text-lg font-semibold">
-            Aanvraag
+            Aanvraaggegevens
           </h2>
 
           <dl className="mt-6 grid gap-6 sm:grid-cols-2">
-            <DetailItem label="Naam" value={lead.name} />
-            <DetailItem label="Bedrijf" value={lead.company || "—"} />
+            <DetailItem
+              label="Naam"
+              value={lead.name}
+            />
+
+            <DetailItem
+              label="Bedrijf"
+              value={lead.company || "—"}
+            />
 
             <DetailItem
               label="E-mail"
@@ -137,7 +148,7 @@ export default async function LeadDetailPage({
 
             <DetailItem
               label="Bron"
-              value={lead.source}
+              value={formatSource(lead.source)}
             />
 
             <DetailItem
@@ -173,7 +184,7 @@ function DetailItem({
   value,
 }: {
   label: string;
-  value: React.ReactNode;
+  value: ReactNode;
 }) {
   return (
     <div>
