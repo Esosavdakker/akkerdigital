@@ -1,3 +1,9 @@
+import { LeadStatusForm } from "@/components/dashboard/lead-status-form";
+import {
+  getLeadStatusLabel,
+  type LeadStatus,
+} from "@/constants/lead-status";
+
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -75,7 +81,7 @@ export default async function LeadDetailPage({
         </div>
 
         <span className="w-fit rounded-full bg-neutral-200 px-4 py-2 text-sm font-medium">
-          {lead.status}
+          {getLeadStatusLabel(lead.status)}
         </span>
       </div>
 
@@ -141,15 +147,22 @@ export default async function LeadDetailPage({
           </dl>
         </section>
 
-        <aside className="rounded-2xl border border-neutral-200 bg-white p-6">
-          <h2 className="text-lg font-semibold">
-            Bericht
-          </h2>
+        <div className="space-y-6">
+          <aside className="rounded-2xl border border-neutral-200 bg-white p-6">
+            <h2 className="text-lg font-semibold">
+              Bericht
+            </h2>
 
-          <p className="mt-5 whitespace-pre-wrap leading-7 text-neutral-700">
-            {lead.message}
-          </p>
-        </aside>
+            <p className="mt-5 whitespace-pre-wrap leading-7 text-neutral-700">
+              {lead.message}
+            </p>
+          </aside>
+
+          <LeadStatusForm
+            leadId={lead.id}
+            currentStatus={lead.status as LeadStatus}
+          />
+        </div>
       </div>
     </div>
   );
