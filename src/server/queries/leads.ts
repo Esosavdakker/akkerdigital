@@ -43,3 +43,38 @@ export async function getLeads(): Promise<Lead[]> {
 
   return data ?? [];
 }
+
+export async function getLeadById(id: string): Promise<Lead | null> {
+  const { data, error } = await supabaseAdmin
+    .from("leads")
+    .select(
+      `
+      id,
+      name,
+      email,
+      company,
+      website,
+      project_type,
+      budget_range,
+      message,
+      status,
+      source,
+      created_at
+      `
+    )
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Failed to fetch lead:", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
+
+    throw new Error("De lead kon niet worden opgehaald.");
+  }
+
+  return data;
+}
