@@ -32,3 +32,16 @@ export const updateLeadPrioritySchema = z.object({
 export type UpdateLeadPriorityInput = z.infer<
   typeof updateLeadPrioritySchema
 >;
+
+export const createLeadNoteSchema = z.object({
+  leadId: z.string().uuid("Ongeldig lead-ID."),
+  content: z
+    .string()
+    .trim()
+    .min(2, "De notitie moet minimaal 2 tekens bevatten.")
+    .max(5000, "De notitie mag maximaal 5000 tekens bevatten."),
+});
+
+export type CreateLeadNoteInput = z.infer<
+  typeof createLeadNoteSchema
+>;

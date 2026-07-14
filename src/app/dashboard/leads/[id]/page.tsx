@@ -2,6 +2,10 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { LeadNoteForm } from "@/components/dashboard/lead-note-form";
+import { LeadNoteList } from "@/components/dashboard/lead-note-list";
+import { getLeadNotes } from "@/server/queries/lead-notes";
+
 import { LeadPriorityBadge } from "@/components/dashboard/lead-priority-badge";
 import { LeadPriorityForm } from "@/components/dashboard/lead-priority-form";
 import type { LeadPriority } from "@/constants/lead-priority";
@@ -60,7 +64,10 @@ export default async function LeadDetailPage({
   params,
 }: LeadDetailPageProps) {
   const { id } = await params;
-  const lead = await getLeadById(id);
+  const [lead, notes] = await Promise.all([
+    getLeadById(id),
+    getLeadNotes(id),
+  ]);
 
   if (!lead) {
     notFound();
@@ -187,6 +194,12 @@ return (
           />
 
         </div>
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_0.7fr]">
+        <LeadNoteList notes={notes} />
+
+        <LeadNoteForm leadId={lead.id} />
       </div>
     </div>
   );
