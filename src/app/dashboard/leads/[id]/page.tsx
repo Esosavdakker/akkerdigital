@@ -2,6 +2,10 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { LeadPriorityBadge } from "@/components/dashboard/lead-priority-badge";
+import { LeadPriorityForm } from "@/components/dashboard/lead-priority-form";
+import type { LeadPriority } from "@/constants/lead-priority";
+
 import { LeadStatusBadge } from "@/components/dashboard/lead-status-badge";
 import { LeadStatusForm } from "@/components/dashboard/lead-status-form";
 import type { LeadStatus } from "@/constants/lead-status";
@@ -61,80 +65,83 @@ export default async function LeadDetailPage({
   if (!lead) {
     notFound();
   }
+ 
+return (
+  <div>
+    <Link
+      href="/dashboard/leads"
+      className="text-sm text-neutral-500 transition hover:text-neutral-950"
+    >
+      ← Terug naar leads
+    </Link>
 
-  return (
-    <div>
-      <Link
-        href="/dashboard/leads"
-        className="text-sm text-neutral-500 transition hover:text-neutral-950"
-      >
-        ← Terug naar leads
-      </Link>
+    <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+      <div>
+        <p className="text-sm font-medium text-neutral-500">
+          Lead
+        </p>
 
-      <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div>
-          <p className="text-sm font-medium text-neutral-500">
-            Lead
-          </p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+          {lead.name}
+        </h1>
 
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-            {lead.name}
-          </h1>
-
-          <p className="mt-2 text-neutral-600">
-            {lead.company || "Geen bedrijfsnaam opgegeven"}
-          </p>
-        </div>
-
-        <LeadStatusBadge status={lead.status} />
+        <p className="mt-2 text-neutral-600">
+          {lead.company || "Geen bedrijfsnaam opgegeven"}
+        </p>
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_0.7fr]">
-        <section className="rounded-2xl border border-neutral-200 bg-white p-6">
-          <h2 className="text-lg font-semibold">
-            Aanvraaggegevens
-          </h2>
+      <div className="flex flex-wrap items-center gap-2">
+        <LeadStatusBadge status={lead.status} />
+        <LeadPriorityBadge priority={lead.priority} />
+      </div>
+    </div>
 
-          <dl className="mt-6 grid gap-6 sm:grid-cols-2">
-            <DetailItem
-              label="Naam"
-              value={lead.name}
-            />
+    <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_0.7fr]">
+      <section className="rounded-2xl border border-neutral-200 bg-white p-6">
+        <h2 className="text-lg font-semibold">
+          Aanvraaggegevens
+        </h2>
 
-            <DetailItem
-              label="Bedrijf"
-              value={lead.company || "—"}
-            />
+        <dl className="mt-6 grid gap-6 sm:grid-cols-2">
+          <DetailItem
+            label="Naam"
+            value={lead.name}
+          />
 
-            <DetailItem
-              label="E-mail"
-              value={
+          <DetailItem
+            label="Bedrijf"
+            value={lead.company || "—"}
+          />
+
+          <DetailItem
+            label="E-mail"
+            value={
+              <a
+                href={`mailto:${lead.email}`}
+                className="hover:underline"
+              >
+                {lead.email}
+              </a>
+            }
+          />
+
+          <DetailItem
+            label="Website"
+            value={
+              lead.website ? (
                 <a
-                  href={`mailto:${lead.email}`}
-                  className="hover:underline"
+                  href={lead.website}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="break-all hover:underline"
                 >
-                  {lead.email}
+                  {lead.website}
                 </a>
-              }
-            />
-
-            <DetailItem
-              label="Website"
-              value={
-                lead.website ? (
-                  <a
-                    href={lead.website}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="break-all hover:underline"
-                  >
-                    {lead.website}
-                  </a>
-                ) : (
-                  "—"
-                )
-              }
-            />
+              ) : (
+                "—"
+              )
+            }
+          />
 
             <DetailItem
               label="Projecttype"
@@ -173,6 +180,12 @@ export default async function LeadDetailPage({
             leadId={lead.id}
             currentStatus={lead.status as LeadStatus}
           />
+
+          <LeadPriorityForm
+            leadId={lead.id}
+            currentPriority={lead.priority as LeadPriority}
+          />
+
         </div>
       </div>
     </div>

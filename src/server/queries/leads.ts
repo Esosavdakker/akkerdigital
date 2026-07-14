@@ -12,6 +12,7 @@ export type Lead = {
   budget_range: string;
   message: string;
   status: string;
+  priority: string;
   source: string;
   created_at: string;
 };
@@ -30,6 +31,7 @@ export async function getLeads(): Promise<Lead[]> {
       budget_range,
       message,
       status,
+      priority,
       source,
       created_at
       `
@@ -58,6 +60,7 @@ export async function getLeadById(id: string): Promise<Lead | null> {
       budget_range,
       message,
       status,
+      priority,
       source,
       created_at
       `
