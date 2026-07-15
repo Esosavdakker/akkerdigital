@@ -45,3 +45,23 @@ export const createLeadNoteSchema = z.object({
 export type CreateLeadNoteInput = z.infer<
   typeof createLeadNoteSchema
 >;
+
+export const updateLeadFollowUpSchema = z.object({
+  leadId: z.string().uuid("Ongeldig lead-ID."),
+  followUpAt: z
+    .string()
+    .min(1, "Kies een datum en tijd.")
+    .refine(
+      (value) => !Number.isNaN(new Date(value).getTime()),
+      "Ongeldige datum of tijd."
+    ),
+  reason: z
+    .string()
+    .trim()
+    .min(2, "De reden moet minimaal 2 tekens bevatten.")
+    .max(500, "De reden mag maximaal 500 tekens bevatten."),
+});
+
+export type UpdateLeadFollowUpInput = z.infer<
+  typeof updateLeadFollowUpSchema
+>;

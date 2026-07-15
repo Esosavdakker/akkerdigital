@@ -13,6 +13,8 @@ export type Lead = {
   message: string;
   status: string;
   priority: string;
+  follow_up_at: string | null;
+  follow_up_reason: string | null;
   source: string;
   created_at: string;
 };
@@ -32,6 +34,8 @@ export async function getLeads(): Promise<Lead[]> {
       message,
       status,
       priority,
+      follow_up_at,
+      follow_up_reason,
       source,
       created_at
       `
@@ -61,6 +65,8 @@ export async function getLeadById(id: string): Promise<Lead | null> {
       message,
       status,
       priority,
+      follow_up_at,
+      follow_up_reason,
       source,
       created_at
       `

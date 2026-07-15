@@ -2,6 +2,8 @@ import Link from "next/link";
 import {
   ArrowRight,
   BriefcaseBusiness,
+  CalendarClock,
+  CircleAlert,
   CircleCheckBig,
   FileText,
   FolderKanban,
@@ -19,6 +21,12 @@ import {
 } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
+
+import {
+  getUpcomingFollowUps,
+  getOverdueFollowUps,
+} from "@/server/queries/follow-ups";
+
 import {
   getLeadMetrics,
   getLeads,
@@ -35,21 +43,21 @@ const modules = [
   {
     title: "Projecten",
     description:
-      "Beheer actieve, geplande en afgeronde klantprojecten.",
+      "Beheer actieve en geplande projecten.",
     href: "/dashboard/projects",
     icon: FolderKanban,
   },
   {
     title: "Klanten",
     description:
-      "Beheer klantgegevens, contactpersonen en relaties.",
+      "Beheer klantgegevens en contactpersonen.",
     href: "/dashboard/clients",
     icon: BriefcaseBusiness,
   },
   {
     title: "Portfolio",
     description:
-      "Beheer case studies en publicaties voor de website.",
+      "Beheer portfolio-items voor de website.",
     href: "/dashboard/portfolio",
     icon: LayoutDashboard,
   },
@@ -58,13 +66,8 @@ const modules = [
 function getGreeting() {
   const hour = new Date().getHours();
 
-  if (hour < 12) {
-    return "Goedemorgen";
-  }
-
-  if (hour < 18) {
-    return "Goedemiddag";
-  }
+  if (hour < 12) return "Goedemorgen";
+  if (hour < 18) return "Goedemiddag";
 
   return "Goedenavond";
 }
@@ -76,10 +79,27 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+function formatFollowUpDate(value: string) {
+  return new Intl.DateTimeFormat("nl-NL", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
 export default async function DashboardPage() {
-  const [metrics, leads] = await Promise.all([
+  const [
+    metrics,
+    leads,
+    followUps,
+    overdueFollowUps,
+  ] = await Promise.all([
     getLeadMetrics(),
     getLeads(),
+    getUpcomingFollowUps(),
+    getOverdueFollowUps(),
   ]);
 
   const recentLeads = leads.slice(0, 5);
@@ -94,14 +114,14 @@ export default async function DashboardPage() {
       <PageHeader
         eyebrow="AkkerDigital Business Cockpit"
         title={`${getGreeting()} 👋`}
-        description="Bekijk wat aandacht nodig heeft en ga direct verder met je belangrijkste werkzaamheden."
+        description="Welkom terug. Dit is jouw dagelijkse overzicht."
       />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Totaal leads"
           value={metrics.total}
-          description="Alle binnengekomen aanvragen"
+          description="Alle aanvragen"
           icon={<Users className="size-4" />}
         />
 
@@ -122,104 +142,166 @@ export default async function DashboardPage() {
         <StatCard
           label="Conversie"
           value={`${conversionRate}%`}
-          description="Gewonnen van totaal"
+          description="Lead → Klant"
           icon={<BriefcaseBusiness className="size-4" />}
         />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <Card>
-          <CardHeader className="border-b">
-            <div>
-              <CardTitle>Recente leads</CardTitle>
+      <section className="grid gap-6 xl:grid-cols-2">
 
-              <CardDescription>
-                De nieuwste aanvragen uit je contactformulier.
-              </CardDescription>
-            </div>
+          <Card>
+          <CardHeader className="border-b">
+            <CardTitle className="flex items-center gap-2">
+              <CircleAlert className="size-5 text-red-500" />
+              Achterstallige follow-ups
+            </CardTitle>
+
+            <CardDescription>
+              Leads die direct aandacht nodig hebben.
+            </CardDescription>
           </CardHeader>
 
           <CardContent>
-            {recentLeads.length === 0 ? (
-              <div className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
-                Er zijn nog geen leads binnengekomen.
+            {overdueFollowUps.length === 0 ? (
+              <div className="rounded-xl border border-dashed p-8 text-center">
+                <p className="font-medium">
+                  🎉 Geen achterstallige follow-ups
+                </p>
+
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Mooi! Alles is bijgewerkt.
+                </p>
               </div>
             ) : (
-              <div className="divide-y">
-                {recentLeads.map((lead) => (
+              <div className="space-y-4">
+                {overdueFollowUps.map((lead) => (
                   <Link
                     key={lead.id}
                     href={`/dashboard/leads/${lead.id}`}
-                    className="flex flex-col gap-3 py-4 transition first:pt-0 last:pb-0 hover:opacity-75 sm:flex-row sm:items-center sm:justify-between"
+                    className="flex items-center justify-between rounded-xl border p-4 transition hover:bg-muted/40"
                   >
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">
+                    <div>
+                      <p className="font-medium">
                         {lead.name}
                       </p>
 
-                      <p className="mt-1 truncate text-sm text-muted-foreground">
-                        {lead.company || lead.email}
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {lead.follow_up_reason || "Geen reden opgegeven"}
                       </p>
                     </div>
 
-                    <div className="flex shrink-0 items-center gap-3">
-                      <LeadStatusBadge status={lead.status} />
-
-                      <span className="hidden text-xs text-muted-foreground md:block">
-                        {formatDate(lead.created_at)}
-                      </span>
-
-                      <ArrowRight className="size-4 text-muted-foreground" />
-                    </div>
+                    <span className="text-xs text-red-600">
+                      {formatFollowUpDate(
+                        lead.follow_up_at
+                      )}
+                    </span>
                   </Link>
                 ))}
               </div>
             )}
-
-            <Link
-              href="/dashboard/leads"
-              className="mt-6 inline-flex items-center gap-2 text-sm font-medium hover:underline"
-            >
-              Alle leads bekijken
-              <ArrowRight className="size-4" />
-            </Link>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="border-b">
-            <CardTitle>Vandaag</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarClock className="size-5" />
+              Komende follow-ups
+            </CardTitle>
 
             <CardDescription>
-              Een kort overzicht van je verkoopproces.
+              Geplande opvolgmomenten.
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="space-y-4">
-            <DashboardSummaryRow
-              label="Nieuwe aanvragen"
-              value={metrics.new}
-            />
+          <CardContent>
+            {followUps.length === 0 ? (
+              <div className="rounded-xl border border-dashed p-8 text-center">
+                <p className="font-medium">
+                  Geen follow-ups gepland
+                </p>
 
-            <DashboardSummaryRow
-              label="Offertes verstuurd"
-              value={metrics.proposalSent}
-            />
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Plan een follow-up vanuit een lead.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {followUps.map((lead) => (
+                  <Link
+                    key={lead.id}
+                    href={`/dashboard/leads/${lead.id}`}
+                    className="flex items-center justify-between rounded-xl border p-4 transition hover:bg-muted/40"
+                  >
+                    <div>
+                      <p className="font-medium">
+                        {lead.name}
+                      </p>
 
-            <DashboardSummaryRow
-              label="Gewonnen leads"
-              value={metrics.won}
-            />
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {lead.follow_up_reason ||
+                          "Follow-up"}
+                      </p>
+                    </div>
 
-            <div className="rounded-xl bg-muted p-4">
-              <p className="text-sm font-medium">
-                Volgende uitbreiding
-              </p>
+                    <span className="text-xs text-muted-foreground">
+                      {formatFollowUpDate(
+                        lead.follow_up_at
+                      )}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </section>
 
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Hier verschijnen straks follow-ups, achterstallige acties en
-                afspraken voor vandaag.
-              </p>
+      <section>
+        <Card>
+          <CardHeader className="border-b">
+            <CardTitle>
+              Recente leads
+            </CardTitle>
+
+            <CardDescription>
+              De vijf nieuwste aanvragen.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent>
+            <div className="space-y-4">
+              {recentLeads.map((lead) => (
+                <Link
+                  key={lead.id}
+                  href={`/dashboard/leads/${lead.id}`}
+                  className="flex items-center justify-between rounded-xl border p-4 transition hover:bg-muted/40"
+                >
+                  <div>
+                    <p className="font-medium">
+                      {lead.name}
+                    </p>
+
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {lead.company || lead.email}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <LeadStatusBadge
+                      status={lead.status}
+                    />
+
+                    <span className="hidden text-xs text-muted-foreground lg:block">
+                      {formatDate(
+                        lead.created_at
+                      )}
+                    </span>
+
+                    <ArrowRight className="size-4" />
+                  </div>
+                </Link>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -227,12 +309,12 @@ export default async function DashboardPage() {
 
       <section>
         <div className="mb-5">
-          <h2 className="text-xl font-semibold tracking-tight">
+          <h2 className="text-xl font-semibold">
             Werkgebieden
           </h2>
 
-          <p className="mt-1 text-sm text-muted-foreground">
-            Ga direct naar een onderdeel van het beheerplatform.
+          <p className="text-sm text-muted-foreground">
+            Kies waar je verder wilt werken.
           </p>
         </div>
 
@@ -246,9 +328,9 @@ export default async function DashboardPage() {
                 href={module.href}
                 className="group"
               >
-                <Card className="h-full transition-all group-hover:-translate-y-0.5 group-hover:shadow-md">
+                <Card className="h-full transition-all group-hover:-translate-y-1 group-hover:shadow-lg">
                   <CardContent className="flex items-start gap-4">
-                    <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-foreground text-background">
+                    <div className="flex size-11 items-center justify-center rounded-xl bg-foreground text-background">
                       <Icon className="size-5" />
                     </div>
 
@@ -257,7 +339,7 @@ export default async function DashboardPage() {
                         {module.title}
                       </h3>
 
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      <p className="mt-2 text-sm text-muted-foreground">
                         {module.description}
                       </p>
                     </div>
@@ -271,24 +353,3 @@ export default async function DashboardPage() {
     </div>
   );
 }
-
-function DashboardSummaryRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: number;
-}) {
-  return (
-    <div className="flex items-center justify-between rounded-xl border px-4 py-3">
-      <span className="text-sm text-muted-foreground">
-        {label}
-      </span>
-
-      <span className="text-lg font-semibold">
-        {value}
-      </span>
-    </div>
-  );
-}
-   

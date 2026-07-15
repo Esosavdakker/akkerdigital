@@ -2,17 +2,22 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { LeadFollowUpForm } from "@/components/dashboard/lead-followup-form";
 import { LeadNoteForm } from "@/components/dashboard/lead-note-form";
 import { LeadNoteList } from "@/components/dashboard/lead-note-list";
-import { getLeadNotes } from "@/server/queries/lead-notes";
-
 import { LeadPriorityBadge } from "@/components/dashboard/lead-priority-badge";
 import { LeadPriorityForm } from "@/components/dashboard/lead-priority-form";
-import type { LeadPriority } from "@/constants/lead-priority";
-
 import { LeadStatusBadge } from "@/components/dashboard/lead-status-badge";
 import { LeadStatusForm } from "@/components/dashboard/lead-status-form";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import type { LeadPriority } from "@/constants/lead-priority";
 import type { LeadStatus } from "@/constants/lead-status";
+import { getLeadNotes } from "@/server/queries/lead-notes";
 import { getLeadById } from "@/server/queries/leads";
 
 type LeadDetailPageProps = {
@@ -64,6 +69,7 @@ export default async function LeadDetailPage({
   params,
 }: LeadDetailPageProps) {
   const { id } = await params;
+
   const [lead, notes] = await Promise.all([
     getLeadById(id),
     getLeadNotes(id),
@@ -72,116 +78,134 @@ export default async function LeadDetailPage({
   if (!lead) {
     notFound();
   }
- 
-return (
-  <div>
-    <Link
-      href="/dashboard/leads"
-      className="text-sm text-neutral-500 transition hover:text-neutral-950"
-    >
-      ← Terug naar leads
-    </Link>
 
-    <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-      <div>
-        <p className="text-sm font-medium text-neutral-500">
-          Lead
-        </p>
+  return (
+    <div className="space-y-8">
+      <Link
+        href="/dashboard/leads"
+        className="inline-flex text-sm text-muted-foreground transition hover:text-foreground"
+      >
+        ← Terug naar leads
+      </Link>
 
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-          {lead.name}
-        </h1>
+      <header className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">
+            Lead
+          </p>
 
-        <p className="mt-2 text-neutral-600">
-          {lead.company || "Geen bedrijfsnaam opgegeven"}
-        </p>
-      </div>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+            {lead.name}
+          </h1>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <LeadStatusBadge status={lead.status} />
-        <LeadPriorityBadge priority={lead.priority} />
-      </div>
-    </div>
+          <p className="mt-2 text-muted-foreground">
+            {lead.company || "Geen bedrijfsnaam opgegeven"}
+          </p>
+        </div>
 
-    <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_0.7fr]">
-      <section className="rounded-2xl border border-neutral-200 bg-white p-6">
-        <h2 className="text-lg font-semibold">
-          Aanvraaggegevens
-        </h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <LeadStatusBadge status={lead.status} />
+          <LeadPriorityBadge priority={lead.priority} />
+        </div>
+      </header>
 
-        <dl className="mt-6 grid gap-6 sm:grid-cols-2">
-          <DetailItem
-            label="Naam"
-            value={lead.name}
-          />
+      <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+        <Card>
+          <CardHeader className="border-b">
+            <CardTitle>Aanvraaggegevens</CardTitle>
+          </CardHeader>
 
-          <DetailItem
-            label="Bedrijf"
-            value={lead.company || "—"}
-          />
+          <CardContent>
+            <dl className="grid gap-6 sm:grid-cols-2">
+              <DetailItem
+                label="Naam"
+                value={lead.name}
+              />
 
-          <DetailItem
-            label="E-mail"
-            value={
-              <a
-                href={`mailto:${lead.email}`}
-                className="hover:underline"
-              >
-                {lead.email}
-              </a>
-            }
-          />
+              <DetailItem
+                label="Bedrijf"
+                value={lead.company || "—"}
+              />
 
-          <DetailItem
-            label="Website"
-            value={
-              lead.website ? (
-                <a
-                  href={lead.website}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="break-all hover:underline"
-                >
-                  {lead.website}
-                </a>
-              ) : (
-                "—"
-              )
-            }
-          />
+              <DetailItem
+                label="E-mail"
+                value={
+                  <a
+                    href={`mailto:${lead.email}`}
+                    className="hover:underline"
+                  >
+                    {lead.email}
+                  </a>
+                }
+              />
 
-            <DetailItem
-              label="Projecttype"
-              value={formatProjectType(lead.project_type)}
-            />
+              <DetailItem
+                label="Website"
+                value={
+                  lead.website ? (
+                    <a
+                      href={lead.website}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="break-all hover:underline"
+                    >
+                      {lead.website}
+                    </a>
+                  ) : (
+                    "—"
+                  )
+                }
+              />
 
-            <DetailItem
-              label="Budget"
-              value={formatBudget(lead.budget_range)}
-            />
+              <DetailItem
+                label="Projecttype"
+                value={formatProjectType(lead.project_type)}
+              />
 
-            <DetailItem
-              label="Bron"
-              value={formatSource(lead.source)}
-            />
+              <DetailItem
+                label="Budget"
+                value={formatBudget(lead.budget_range)}
+              />
 
-            <DetailItem
-              label="Ontvangen"
-              value={formatDate(lead.created_at)}
-            />
-          </dl>
-        </section>
+              <DetailItem
+                label="Bron"
+                value={formatSource(lead.source)}
+              />
+
+              <DetailItem
+                label="Ontvangen"
+                value={formatDate(lead.created_at)}
+              />
+
+              <DetailItem
+                label="Volgende follow-up"
+                value={
+                  lead.follow_up_at
+                    ? formatDate(lead.follow_up_at)
+                    : "Nog niet gepland"
+                }
+              />
+
+              <DetailItem
+                label="Reden follow-up"
+                value={lead.follow_up_reason || "—"}
+              />
+            </dl>
+          </CardContent>
+        </Card>
 
         <div className="space-y-6">
-          <aside className="rounded-2xl border border-neutral-200 bg-white p-6">
-            <h2 className="text-lg font-semibold">
-              Bericht
-            </h2>
+          <Card>
+            <CardHeader className="border-b">
+              <CardTitle>Bericht</CardTitle>
+            </CardHeader>
 
-            <p className="mt-5 whitespace-pre-wrap leading-7 text-neutral-700">
-              {lead.message}
-            </p>
-          </aside>
+            <CardContent>
+              <p className="whitespace-pre-wrap leading-7 text-muted-foreground">
+                {lead.message}
+              </p>
+            </CardContent>
+          </Card>
 
           <LeadStatusForm
             leadId={lead.id}
@@ -193,12 +217,16 @@ return (
             currentPriority={lead.priority as LeadPriority}
           />
 
+          <LeadFollowUpForm
+            leadId={lead.id}
+            currentFollowUpAt={lead.follow_up_at}
+            currentReason={lead.follow_up_reason}
+          />
         </div>
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_0.7fr]">
+      <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <LeadNoteList notes={notes} />
-
         <LeadNoteForm leadId={lead.id} />
       </div>
     </div>
@@ -214,11 +242,11 @@ function DetailItem({
 }) {
   return (
     <div>
-      <dt className="text-sm text-neutral-500">
+      <dt className="text-sm text-muted-foreground">
         {label}
       </dt>
 
-      <dd className="mt-1 font-medium text-neutral-950">
+      <dd className="mt-1 font-medium">
         {value}
       </dd>
     </div>
