@@ -1,7 +1,24 @@
-"use client";
+ "use client";
 
 import { useState, useTransition } from "react";
+import { Flag } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   leadPriorities,
   type LeadPriority,
@@ -20,12 +37,20 @@ export function LeadPriorityForm({
   const [priority, setPriority] =
     useState<LeadPriority>(currentPriority);
 
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
   const [isPending, startTransition] = useTransition();
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  const hasChanges = priority !== currentPriority;
+
+  function handleSubmit(
+    event: React.FormEvent<HTMLFormElement>
+  ) {
     event.preventDefault();
-    setMessage("");
+    setMessage(null);
 
     startTransition(async () => {
       const result = await updateLeadPriority({
@@ -33,60 +58,93 @@ export function LeadPriorityForm({
         priority,
       });
 
-      setMessage(result.message);
+      setMessage({
+        type: result.success ? "success" : "error",
+        text: result.message,
+      });
     });
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="rounded-2xl border border-neutral-200 bg-white p-6"
-    >
-      <h2 className="text-lg font-semibold">
-        Prioriteit
-      </h2>
+    <Card>
+      <CardHeader className="border-b">
+        <div className="flex items-start gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted">
+            <Flag className="size-5 text-muted-foreground" />
+          </div>
 
-      <label className="mt-5 block">
-        <span className="mb-2 block text-sm font-medium text-neutral-700">
-          Leadprioriteit
-        </span>
+          <div>
+            <CardTitle>Prioriteit</CardTitle>
 
-        <select
-          value={priority}
-          onChange={(event) =>
-            setPriority(event.target.value as LeadPriority)
-          }
-          disabled={isPending}
-          className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none focus:border-neutral-950"
+            <CardDescription className="mt-1">
+              Bepaal hoeveel aandacht deze lead momenteel nodig heeft.
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent>
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-5"
         >
-          {leadPriorities.map((item) => (
-            <option
-              key={item.value}
-              value={item.value}
+          <div className="space-y-2">
+            <Label htmlFor="lead-priority">
+              Prioriteit
+            </Label>
+
+            <Select
+              value={priority}
+              onValueChange={(value) => {
+                setPriority(value as LeadPriority);
+                setMessage(null);
+              }}
+              disabled={isPending}
             >
-              {item.label}
-            </option>
-          ))}
-        </select>
-      </label>
+              <SelectTrigger
+                id="lead-priority"
+                className="w-full"
+              >
+                <SelectValue placeholder="Kies een prioriteit" />
+              </SelectTrigger>
 
-      <button
-        type="submit"
-        disabled={
-          isPending || priority === currentPriority
-        }
-        className="mt-4 w-full rounded-full bg-neutral-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {isPending
-          ? "Opslaan..."
-          : "Prioriteit opslaan"}
-      </button>
+              <SelectContent>
+                {leadPriorities.map((item) => (
+                  <SelectItem
+                    key={item.value}
+                    value={item.value}
+                  >
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-      {message && (
-        <p className="mt-4 text-sm text-neutral-600">
-          {message}
-        </p>
-      )}
-    </form>
+          {message && (
+            <div
+              role="status"
+              className={
+                message.type === "success"
+                  ? "rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800"
+                  : "rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+              }
+            >
+              {message.text}
+            </div>
+          )}
+
+          <Button
+            type="submit"
+            disabled={!hasChanges || isPending}
+            className="w-full rounded-full"
+          >
+            {isPending
+              ? "Prioriteit opslaan..."
+              : "Prioriteit opslaan"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

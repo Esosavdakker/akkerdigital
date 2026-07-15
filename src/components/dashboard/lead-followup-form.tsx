@@ -11,6 +11,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { updateLeadFollowUp } from "@/server/actions/lead-followup";
 
 type LeadFollowUpFormProps = {
@@ -26,9 +29,7 @@ function toInputValue(value: string | null) {
 
   const date = new Date(value);
   const offset = date.getTimezoneOffset();
-  const localDate = new Date(
-    date.getTime() - offset * 60 * 1000
-  );
+  const localDate = new Date(date.getTime() - offset * 60 * 1000);
 
   return localDate.toISOString().slice(0, 16);
 }
@@ -41,8 +42,7 @@ export function LeadFollowUpForm({
   const initialFollowUpAt = toInputValue(currentFollowUpAt);
   const initialReason = currentReason ?? "";
 
-  const [followUpAt, setFollowUpAt] =
-    useState(initialFollowUpAt);
+  const [followUpAt, setFollowUpAt] = useState(initialFollowUpAt);
   const [reason, setReason] = useState(initialReason);
   const [message, setMessage] = useState<{
     type: "success" | "error";
@@ -52,8 +52,7 @@ export function LeadFollowUpForm({
   const [isPending, startTransition] = useTransition();
 
   const hasChanges =
-    followUpAt !== initialFollowUpAt ||
-    reason !== initialReason;
+    followUpAt !== initialFollowUpAt || reason !== initialReason;
 
   const canSubmit =
     followUpAt.length > 0 &&
@@ -61,9 +60,7 @@ export function LeadFollowUpForm({
     hasChanges &&
     !isPending;
 
-  function handleSubmit(
-    event: React.FormEvent<HTMLFormElement>
-  ) {
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage(null);
 
@@ -93,24 +90,19 @@ export function LeadFollowUpForm({
             <CardTitle>Follow-up</CardTitle>
 
             <CardDescription className="mt-1">
-              Plan wanneer en waarom je deze lead opnieuw wilt
-              benaderen.
+              Plan wanneer en waarom je deze lead opnieuw wilt benaderen.
             </CardDescription>
           </div>
         </div>
       </CardHeader>
 
       <CardContent>
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-5"
-        >
-          <label className="block">
-            <span className="mb-2 block text-sm font-medium">
-              Datum en tijd
-            </span>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="follow-up-at">Datum en tijd</Label>
 
-            <input
+            <Input
+              id="follow-up-at"
               type="datetime-local"
               value={followUpAt}
               onChange={(event) => {
@@ -119,16 +111,14 @@ export function LeadFollowUpForm({
               }}
               disabled={isPending}
               required
-              className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none transition focus:border-foreground disabled:cursor-not-allowed disabled:opacity-60"
             />
-          </label>
+          </div>
 
-          <label className="block">
-            <span className="mb-2 block text-sm font-medium">
-              Reden
-            </span>
+          <div className="space-y-2">
+            <Label htmlFor="follow-up-reason">Reden</Label>
 
-            <textarea
+            <Textarea
+              id="follow-up-reason"
               value={reason}
               onChange={(event) => {
                 setReason(event.target.value);
@@ -138,12 +128,12 @@ export function LeadFollowUpForm({
               disabled={isPending}
               required
               placeholder="Bijvoorbeeld: bel voor akkoord op de offerte."
-              className="w-full resize-y rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none transition placeholder:text-muted-foreground focus:border-foreground disabled:cursor-not-allowed disabled:opacity-60"
             />
-          </label>
+          </div>
 
           {message && (
             <div
+              role="status"
               className={
                 message.type === "success"
                   ? "rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800"
@@ -159,9 +149,7 @@ export function LeadFollowUpForm({
             disabled={!canSubmit}
             className="w-full rounded-full"
           >
-            {isPending
-              ? "Follow-up opslaan..."
-              : "Follow-up opslaan"}
+            {isPending ? "Follow-up opslaan..." : "Follow-up opslaan"}
           </Button>
         </form>
       </CardContent>

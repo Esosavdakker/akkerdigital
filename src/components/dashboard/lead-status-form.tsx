@@ -1,7 +1,24 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { RefreshCw } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   leadStatuses,
   type LeadStatus,
@@ -18,12 +35,19 @@ export function LeadStatusForm({
   currentStatus,
 }: LeadStatusFormProps) {
   const [status, setStatus] = useState<LeadStatus>(currentStatus);
-  const [message, setMessage] = useState("");
+
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
   const [isPending, startTransition] = useTransition();
+
+  const hasChanges = status !== currentStatus;
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setMessage("");
+    setMessage(null);
 
     startTransition(async () => {
       const result = await updateLeadStatus({
@@ -31,56 +55,90 @@ export function LeadStatusForm({
         status,
       });
 
-      setMessage(result.message);
+      setMessage({
+        type: result.success ? "success" : "error",
+        text: result.message,
+      });
     });
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="rounded-2xl border border-neutral-200 bg-white p-6"
-    >
-      <h2 className="text-lg font-semibold">
-        Leadstatus
-      </h2>
+    <Card>
+      <CardHeader className="border-b">
+        <div className="flex items-start gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted">
+            <RefreshCw className="size-5 text-muted-foreground" />
+          </div>
 
-      <label className="mt-5 block">
-        <span className="mb-2 block text-sm font-medium text-neutral-700">
-          Status
-        </span>
+          <div>
+            <CardTitle>Leadstatus</CardTitle>
 
-        <select
-          value={status}
-          onChange={(event) =>
-            setStatus(event.target.value as LeadStatus)
-          }
-          disabled={isPending}
-          className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none focus:border-neutral-950"
-        >
-          {leadStatuses.map((item) => (
-            <option
-              key={item.value}
-              value={item.value}
+            <CardDescription className="mt-1">
+              Houd bij waar deze lead zich in het verkoopproces bevindt.
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="lead-status">
+              Status
+            </Label>
+
+            <Select
+              value={status}
+              onValueChange={(value) => {
+                setStatus(value as LeadStatus);
+                setMessage(null);
+              }}
+              disabled={isPending}
             >
-              {item.label}
-            </option>
-          ))}
-        </select>
-      </label>
+              <SelectTrigger
+                id="lead-status"
+                className="w-full"
+              >
+                <SelectValue placeholder="Kies een status" />
+              </SelectTrigger>
 
-      <button
-        type="submit"
-        disabled={isPending || status === currentStatus}
-        className="mt-4 w-full rounded-full bg-neutral-950 px-5 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {isPending ? "Opslaan..." : "Status opslaan"}
-      </button>
+              <SelectContent>
+                {leadStatuses.map((item) => (
+                  <SelectItem
+                    key={item.value}
+                    value={item.value}
+                  >
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-      {message && (
-        <p className="mt-4 text-sm text-neutral-600">
-          {message}
-        </p>
-      )}
-    </form>
+          {message && (
+            <div
+              role="status"
+              className={
+                message.type === "success"
+                  ? "rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800"
+                  : "rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+              }
+            >
+              {message.text}
+            </div>
+          )}
+
+          <Button
+            type="submit"
+            disabled={!hasChanges || isPending}
+            className="w-full rounded-full"
+          >
+            {isPending
+              ? "Status opslaan..."
+              : "Status opslaan"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
