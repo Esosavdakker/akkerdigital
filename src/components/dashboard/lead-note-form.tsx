@@ -1,7 +1,18 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { NotebookPen } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { createLeadNote } from "@/server/actions/lead-notes";
 
 type LeadNoteFormProps = {
@@ -12,14 +23,22 @@ export function LeadNoteForm({
   leadId,
 }: LeadNoteFormProps) {
   const [content, setContent] = useState("");
-  const [message, setMessage] = useState("");
+
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
   const [isPending, startTransition] = useTransition();
+
+  const canSubmit =
+    content.trim().length >= 2 && !isPending;
 
   function handleSubmit(
     event: React.FormEvent<HTMLFormElement>
   ) {
     event.preventDefault();
-    setMessage("");
+    setMessage(null);
 
     startTransition(async () => {
       const result = await createLeadNote({
@@ -27,7 +46,10 @@ export function LeadNoteForm({
         content,
       });
 
-      setMessage(result.message);
+      setMessage({
+        type: result.success ? "success" : "error",
+        text: result.message,
+      });
 
       if (result.success) {
         setContent("");
@@ -36,48 +58,81 @@ export function LeadNoteForm({
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="rounded-2xl border border-neutral-200 bg-white p-6"
-    >
-      <h2 className="text-lg font-semibold">
-        Nieuwe notitie
-      </h2>
+    <Card>
+      <CardHeader className="border-b">
+        <div className="flex items-start gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted">
+            <NotebookPen className="size-5 text-muted-foreground" />
+          </div>
 
-      <label className="mt-5 block">
-        <span className="mb-2 block text-sm font-medium text-neutral-700">
-          Interne notitie
-        </span>
+          <div>
+            <CardTitle>Nieuwe notitie</CardTitle>
 
-        <textarea
-          value={content}
-          onChange={(event) =>
-            setContent(event.target.value)
-          }
-          rows={5}
-          disabled={isPending}
-          placeholder="Schrijf hier een interne notitie..."
-          className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none focus:border-neutral-950"
-        />
-      </label>
+            <CardDescription className="mt-1">
+              Leg een gesprek, afspraak of intern aandachtspunt vast.
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
 
-      <button
-        type="submit"
-        disabled={
-          isPending || content.trim().length < 2
-        }
-        className="mt-4 w-full rounded-full bg-neutral-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {isPending
-          ? "Opslaan..."
-          : "Notitie toevoegen"}
-      </button>
+      <CardContent>
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-5"
+        >
+          <div className="space-y-2">
+            <Label htmlFor="lead-note">
+              Interne notitie
+            </Label>
 
-      {message && (
-        <p className="mt-4 text-sm text-neutral-600">
-          {message}
-        </p>
-      )}
-    </form>
+            <Textarea
+              id="lead-note"
+              value={content}
+              onChange={(event) => {
+                setContent(event.target.value);
+                setMessage(null);
+              }}
+              rows={6}
+              maxLength={5000}
+              disabled={isPending}
+              placeholder="Bijvoorbeeld: klant gebeld en offerte besproken."
+            />
+
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>
+                Alleen zichtbaar binnen AkkerDigital.
+              </span>
+
+              <span>
+                {content.length}/5000
+              </span>
+            </div>
+          </div>
+
+          {message && (
+            <div
+              role="status"
+              className={
+                message.type === "success"
+                  ? "rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800"
+                  : "rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+              }
+            >
+              {message.text}
+            </div>
+          )}
+
+          <Button
+            type="submit"
+            disabled={!canSubmit}
+            className="w-full rounded-full"
+          >
+            {isPending
+              ? "Notitie toevoegen..."
+              : "Notitie toevoegen"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
