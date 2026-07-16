@@ -5,6 +5,10 @@ import Link from "next/link";
 import { Search, Users, X } from "lucide-react";
 
 import { LeadPriorityBadge } from "@/components/dashboard/lead-priority-badge";
+import {
+  LeadSortSelect,
+  type LeadSortOption,
+} from "@/components/dashboard/lead-sort-select";
 import { LeadStatusBadge } from "@/components/dashboard/lead-status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +35,12 @@ type LeadListItem = {
 
 type LeadListProps = {
   leads: LeadListItem[];
+};
+
+const priorityOrder: Record<string, number> = {
+  high: 0,
+  medium: 1,
+  low: 2,
 };
 
 function formatDate(value: string) {
@@ -68,11 +78,13 @@ export function LeadList({ leads }: LeadListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [sortOption, setSortOption] =
+    useState<LeadSortOption>("newest");
 
-  const filteredLeads = useMemo(() => {
+  const filteredAndSortedLeads = useMemo(() => {
     const normalizedSearch = searchQuery.trim().toLowerCase();
 
-    return leads.filter((lead) => {
+    const filtered = leads.filter((lead) => {
       const matchesSearch =
         normalizedSearch.length === 0 ||
         lead.name.toLowerCase().includes(normalizedSearch) ||
@@ -92,11 +104,38 @@ export function LeadList({ leads }: LeadListProps) {
         matchesPriority
       );
     });
+
+    return [...filtered].sort((a, b) => {
+      switch (sortOption) {
+        case "oldest":
+          return (
+            new Date(a.created_at).getTime() -
+            new Date(b.created_at).getTime()
+          );
+
+        case "name":
+          return a.name.localeCompare(b.name, "nl");
+
+        case "priority":
+          return (
+            (priorityOrder[a.priority] ?? 99) -
+            (priorityOrder[b.priority] ?? 99)
+          );
+
+        case "newest":
+        default:
+          return (
+            new Date(b.created_at).getTime() -
+            new Date(a.created_at).getTime()
+          );
+      }
+    });
   }, [
     leads,
     searchQuery,
     statusFilter,
     priorityFilter,
+    sortOption,
   ]);
 
   const hasActiveFilters =
@@ -108,13 +147,14 @@ export function LeadList({ leads }: LeadListProps) {
     setSearchQuery("");
     setStatusFilter("all");
     setPriorityFilter("all");
+    setSortOption("newest");
   }
 
   return (
     <div className="space-y-5">
       <div className="space-y-4 rounded-xl border bg-background p-4">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="relative w-full lg:max-w-md">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="relative w-full xl:max-w-md">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 
             <Input
@@ -127,17 +167,24 @@ export function LeadList({ leads }: LeadListProps) {
             />
           </div>
 
-          {hasActiveFilters && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={clearFilters}
-              className="shrink-0"
-            >
-              <X className="size-4" />
-              Filters wissen
-            </Button>
-          )}
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <LeadSortSelect
+              value={sortOption}
+              onValueChange={setSortOption}
+            />
+
+            {(hasActiveFilters || sortOption !== "newest") && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={clearFilters}
+                className="shrink-0"
+              >
+                <X className="size-4" />
+                Herstellen
+              </Button>
+            )}
+          </div>
         </div>
 
         <FilterGroup label="Status">
@@ -187,8 +234,8 @@ export function LeadList({ leads }: LeadListProps) {
 
       <div className="flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
         <p>
-          {filteredLeads.length}{" "}
-          {filteredLeads.length === 1
+          {filteredAndSortedLeads.length}{" "}
+          {filteredAndSortedLeads.length === 1
             ? "lead gevonden"
             : "leads gevonden"}
         </p>
@@ -196,8 +243,7 @@ export function LeadList({ leads }: LeadListProps) {
         <div className="flex flex-wrap gap-x-4 gap-y-1">
           {statusFilter !== "all" && (
             <span>
-              Status:{" "}
-              {getLeadStatusLabel(statusFilter)}
+              Status: {getLeadStatusLabel(statusFilter)}
             </span>
           )}
 
@@ -210,7 +256,7 @@ export function LeadList({ leads }: LeadListProps) {
         </div>
       </div>
 
-      {filteredLeads.length === 0 ? (
+      {filteredAndSortedLeads.length === 0 ? (
         <div className="rounded-xl border border-dashed p-10 text-center">
           <div className="mx-auto flex size-11 items-center justify-center rounded-full bg-muted">
             <Users className="size-5 text-muted-foreground" />
@@ -224,14 +270,14 @@ export function LeadList({ leads }: LeadListProps) {
             Pas je zoekopdracht of filters aan.
           </p>
 
-          {hasActiveFilters && (
+          {(hasActiveFilters || sortOption !== "newest") && (
             <Button
               type="button"
               variant="outline"
               onClick={clearFilters}
               className="mt-5"
             >
-              Filters wissen
+              Herstellen
             </Button>
           )}
         </div>
@@ -266,7 +312,7 @@ export function LeadList({ leads }: LeadListProps) {
               </thead>
 
               <tbody>
-                {filteredLeads.map((lead) => (
+                {filteredAndSortedLeads.map((lead) => (
                   <tr
                     key={lead.id}
                     className="border-t transition hover:bg-muted/30"
@@ -289,15 +335,11 @@ export function LeadList({ leads }: LeadListProps) {
                     </td>
 
                     <td className="px-5 py-4 text-muted-foreground">
-                      {formatProjectType(
-                        lead.project_type
-                      )}
+                      {formatProjectType(lead.project_type)}
                     </td>
 
                     <td className="px-5 py-4 text-muted-foreground">
-                      {formatBudget(
-                        lead.budget_range
-                      )}
+                      {formatBudget(lead.budget_range)}
                     </td>
 
                     <td className="px-5 py-4">
