@@ -1,5 +1,6 @@
 "use client";
 
+import { LeadFollowUpBadge } from "@/components/dashboard/lead-follow-up-badge";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Search, Users, X } from "lucide-react";
@@ -30,6 +31,7 @@ type LeadListItem = {
   budget_range: string;
   status: string;
   priority: string;
+  follow_up_at: string | null;
   created_at: string;
 };
 
@@ -112,6 +114,18 @@ export function LeadList({ leads }: LeadListProps) {
             new Date(a.created_at).getTime() -
             new Date(b.created_at).getTime()
           );
+
+        case "follow_up": {
+            const aTime = a.follow_up_at
+            ? new Date(a.follow_up_at).getTime()
+            : Number.POSITIVE_INFINITY;
+
+            const bTime = b.follow_up_at
+            ? new Date(b.follow_up_at).getTime()
+            : Number.POSITIVE_INFINITY;
+
+       return aTime - bTime;
+       }
 
         case "name":
           return a.name.localeCompare(b.name, "nl");
@@ -308,6 +322,8 @@ export function LeadList({ leads }: LeadListProps) {
                   <th className="px-5 py-4 font-medium">
                     Datum
                   </th>
+                  <th className="px-5 py-4 font-medium">
+                  </th>  
                 </tr>
               </thead>
 
@@ -317,6 +333,10 @@ export function LeadList({ leads }: LeadListProps) {
                     key={lead.id}
                     className="border-t transition hover:bg-muted/30"
                   >
+                    <td className="px-5 py-4">
+                      <LeadFollowUpBadge followUpAt={lead.follow_up_at} />
+                    </td>
+                    
                     <td className="px-5 py-4">
                       <Link
                         href={`/dashboard/leads/${lead.id}`}

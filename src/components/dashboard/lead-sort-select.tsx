@@ -4,6 +4,7 @@ import {
   ArrowDownAZ,
   CalendarArrowDown,
   CalendarArrowUp,
+  CalendarClock,
   Flag,
 } from "lucide-react";
 
@@ -19,7 +20,8 @@ export type LeadSortOption =
   | "newest"
   | "oldest"
   | "name"
-  | "priority";
+  | "priority"
+  | "follow_up";
 
 type LeadSortSelectProps = {
   value: LeadSortOption;
@@ -67,6 +69,13 @@ export function LeadSortSelect({
           <span className="flex items-center gap-2">
             <Flag className="size-4" />
             Hoogste prioriteit
+          </span>
+        </SelectItem>
+
+        <SelectItem value="follow_up">
+          <span className="flex items-center gap-2">
+            <CalendarClock className="size-4" />
+            Eerstvolgende follow-up
           </span>
         </SelectItem>
       </SelectContent>
